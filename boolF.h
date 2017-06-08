@@ -257,9 +257,37 @@ public:
 
     // T(x1, x2, ..., xN) - текущая функция
     // operator вернет новую функцию, которая равна композиции G = T(fs[0], fs[1], ..., fs[N-1])
-    boolean_function operator()(const std::vector<boolean_function> &fs) const {}
+    boolean_function operator()(const std::vector<boolean_function> &fs) const {
+        std::vector<boolean_function> bf = fs;
+        size_t maxS = 0;
+        for (auto it = bf.begin(); it != bf.end(); ++it) {
+            if (it->size() >= maxS)
+                maxS = it->size();
+        }
+        for (auto it = bf.begin(); it != bf.end(); ++it) {
+            while (it->size() != maxS) {
+                size_t size = it->size();
+                for (size_t i = 0; i < size; ++i) {
+                    it->func.push_back(it->func[i]);
+                }
+            }
+        }
+        std::vector<value_type> G;
+        for (size_t i = 0; i < maxS; ++i) {
+            std::vector<value_type> vector;
+            for (auto it = bf.begin(); it != bf.end(); ++it) {
+                vector.push_back(it->at(i));
+            }
+            G.push_back((*this)(vector));
+        }
+        return G;
 
-    boolean_function operator()(const std::initializer_list<boolean_function> vars) const {}
+    }
+
+    boolean_function operator()(const std::initializer_list<boolean_function> vars) const {
+        std::vector<boolean_function> bf = vars;
+        return (*this)(bf);
+    }
 
     bool is_monotone() const {
         size_t dist = this->size() / 2;
@@ -346,7 +374,18 @@ public:
     }
 
     // Возвращает АНФ функции
-    std::vector<value_type> anf() const {}
+    std::vector<value_type> anf() const {
+        std::vector<value_type> bf = func;
+        std::vector<value_type> ANF;
+        while (bf.size() >= 1) {
+            ANF.push_back(bf[0]);
+            for (size_t i = 0; i < bf.size() - 1; ++i) {
+                bf[i] = bf[i] ^ bf[i + 1];
+            }
+            bf.pop_back();
+        }
+        return ANF;
+    }
 };
 
 // пусть boolean_function представляет из себя функцию "01110000"
